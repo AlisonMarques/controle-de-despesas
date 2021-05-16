@@ -30,55 +30,61 @@ const removeTransaction = (ID) => {
 };
 
 // RENDERIZANDO AS TRANSAÇÕES
-const addTransactionIntoDOM = (transaction) => {
+const addTransactionIntoDOM = ({ amount, name, id }) => {
    //obtendo o operador matemático de acordo com o valor do amount
-   const operator = transaction.amount < 0 ? '-' : '+';
+   const operator = amount < 0 ? '-' : '+';
 
    //Adicionando operador matemático para o elemento html de acordo com o operator do amount
-   const CSSClass = transaction.amount < 0 ? 'minus' : 'plus';
+   const CSSClass = amount < 0 ? 'minus' : 'plus';
 
    // servindo para tirar a expressão do operador de subtração que vem dentro de um valor negativo (-)
-   const amountWithoutOperator = Math.abs(transaction.amount);
+   const amountWithoutOperator = Math.abs(amount);
 
    const li = document.createElement('li');
 
    li.classList.add(CSSClass);
    li.innerHTML = `
-  ${transaction.name} <span>${operator} R$ ${amountWithoutOperator}</span>
-  <button class="delete-btn" onClick="removeTransaction(${transaction.id})">x</button>
+  ${name} <span>${operator} R$ ${amountWithoutOperator}</span>
+  <button class="delete-btn" onClick="removeTransaction(${id})">x</button>
   `;
 
    //adicionando a li ao elemento transactions do html
    transactionsUl.append(li);
 };
 
+// fazendo um filter para retornar apenas os valores que seja menor que zero// despesa
+const getExpenses = (transactionsAmounts) =>
+   Math.abs(
+      transactionsAmounts
+         .filter((value) => value < 0)
+         .reduce((accumulator, value) => accumulator + value, 0)
+   ).toFixed(2);
+
+// fazendo um filter para retornar apenas os valores que seja maior que zero// renda
+const getIncome = (transactionsAmounts) =>
+   transactionsAmounts
+      .filter((value) => value > 0)
+      .reduce((accumulator, value) => accumulator + value, 0)
+      .toFixed(2);
+
+// fazendo um reduce para transforma os valores de amount em um só resultado// um unico valor
+const getTotal = (transactionsAmounts) =>
+   transactionsAmounts
+      .reduce((accumulator, transaction) => accumulator + transaction, 0)
+      .toFixed(2);
+
 // RENDERIZANDO O SALDO ATUAL, RECEITAS E DESPESAS
 const updateBalanceValues = () => {
    //Obtendo valores da renda
 
    //fazendo um map no objeto e pegando apenas a propriedade amount
-   const transactionsAmounts = transactions.map(
-      (transaction) => transaction.amount
-   );
+   const transactionsAmounts = transactions.map(({ amount }) => amount);
 
-   // fazendo um reduce para transforma os valores de amount em um só resultado// um unico valor
-   const total = transactionsAmounts
-      .reduce((accumulator, transaction) => accumulator + transaction, 0)
-      .toFixed(2);
-
-   // fazendo um filter para retornar apenas os valores que seja maior que zero// renda
-   const income = transactionsAmounts
-      .filter((value) => value > 0)
-      .reduce((accumulator, value) => accumulator + value, 0)
-      .toFixed(2);
+   const total = getTotal(transactionsAmounts);
+   const income = getIncome(transactionsAmounts);
 
    // Obtendo valores das despesas
-   // fazendo um filter para retornar apenas os valores que seja menor que zero// despesa
-   const expense = Math.abs(
-      transactionsAmounts
-         .filter((value) => value < 0)
-         .reduce((accumulator, value) => accumulator + value, 0)
-   ).toFixed(2);
+   const expense = getExpenses(transactionsAmounts);
 
    // Passando os dados para os elementos
    balanceDisplay.textContent = `R$ ${total}`;
@@ -105,29 +111,41 @@ const updateLocalStorage = () => {
 //gerando os ids aleatorio
 const generateID = () => Math.round(Math.random() * 1000);
 
+// Objeto que recebe os dados informados no form
+const addTransactionsArray = (transactionName, transactionAmount) => {
+   //Adicionando os dados das transactions
+   transactions.push({
+      id: generateID(),
+      name: transactionName,
+      amount: Number(transactionAmount),
+   });
+};
+
+const cleanInputs = () => {
+   // Limpando os inputs dos forms após o submit
+   inputTransactionName.value = '';
+   inputTransactionAmount.value = '';
+};
+
 // Controlando o formulário de add transação
-form.addEventListener('submit', (event) => {
+const handleFormSubmit = (event) => {
    // evitando que os dados sejam enviados após o submit pq vamos tratar eles antes
    event.preventDefault();
 
    const transactionName = inputTransactionName.value.trim();
    const transactionAmount = inputTransactionAmount.value.trim();
+   // verificando se os forms estão preenchidos
+   const isSomeInputEmpty = transactionName === '' || transactionAmount === '';
 
    // verificando se os forms estão preenchidos
-   if (transactionName === '' || transactionAmount === '') {
+   if (isSomeInputEmpty) {
       alert(`Por favor, preencha tanto o "NOME" quanto o "VALOR DA TRANSAÇÃO`);
       return;
    }
 
    // Objeto que recebe os dados informados no form
-   const transaction = {
-      id: generateID(),
-      name: transactionName,
-      amount: Number(transactionAmount),
-   };
+   addTransactionsArray(transactionName, transactionAmount);
 
-   //Adicionando os dados das transaction
-   transactions.push(transaction);
    //Atualizando os dados na interface
    init();
 
@@ -135,6 +153,8 @@ form.addEventListener('submit', (event) => {
    updateLocalStorage();
 
    // Limpando os inputs dos forms após o submit
-   inputTransactionName.value = '';
-   inputTransactionAmount.value = '';
-});
+   cleanInputs();
+};
+
+// Controlando o formulário de add transação
+form.addEventListener('submit', handleFormSubmit);
