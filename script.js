@@ -6,6 +6,11 @@ const balanceDisplay = document.querySelector('#balance');
 const form = document.querySelector('#form');
 const inputTransactionName = document.querySelector('#text');
 const inputTransactionAmount = document.querySelector('#amount');
+const transactionsNameEl = document.querySelector(
+   '[data-js="transactions-container"]'
+);
+
+const amountsValueEl = document.querySelector('[data-js="amounts-container"]');
 
 const localStorageTransactions = JSON.parse(
    localStorage.getItem('transactions')
@@ -137,9 +142,47 @@ const handleFormSubmit = (event) => {
    // verificando se os forms estão preenchidos
    const isSomeInputEmpty = transactionName === '' || transactionAmount === '';
 
-   // verificando se os forms estão preenchidos
-   if (isSomeInputEmpty) {
-      alert(`Por favor, preencha tanto o "NOME" quanto o "VALOR DA TRANSAÇÃO`);
+   // Alert personalizado com bootstrap
+   const transactionsAlert = (type, position) => {
+      const div = document.createElement('div');
+      const button = document.createElement('button');
+
+      div.textContent = `Por favor, preencha o ${type} da transação`;
+      div.classList.add(
+         'alert',
+         'alert-warning',
+         'alert-dismissible',
+         'fade',
+         'show'
+      );
+      div.setAttribute('role', 'alert');
+      button.classList.add('btn-close');
+      button.setAttribute('type', 'button');
+      button.setAttribute('Atrribute', 'Close');
+
+      //removendo a messagem de alerta
+      button.addEventListener('click', () => {
+         div.remove();
+      });
+
+      div.appendChild(button);
+
+      if (position === 'afterend') {
+         transactionsNameEl.insertAdjacentElement(`${position}`, div);
+         return;
+      }
+
+      amountsValueEl.insertAdjacentElement('beforeend', div);
+   };
+   // verificando se o form está preenchido
+   if (transactionName === '') {
+      transactionsAlert('nome', 'afterend');
+      return;
+   }
+
+   // verificando se o form amount está preenchido
+   if (transactionAmount === '') {
+      transactionsAlert('valor');
       return;
    }
 
